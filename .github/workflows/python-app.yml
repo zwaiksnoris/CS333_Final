@@ -3,7 +3,6 @@ name: Python application
 on:
   push:
     branches: [ "main" ]
-    tags:     [ "v*" ]  
   pull_request:
     branches: [ "main" ]
 
@@ -43,17 +42,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check if this is a tagged release
-        id: check_tag
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            echo "tagged=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "tagged=false" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Generate release version
+        id: version
+        run: echo "tag=v-$(date +'%Y%m%d-%H%M%S')" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        if: steps.check_tag.outputs.tagged == 'true'
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          release_name: Release ${{ steps.version.outputs.tag }}
           generate_release_notes: true
