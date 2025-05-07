@@ -55,7 +55,7 @@ jobs:
 
       - name: Build Executable
         run: |
-          pyinstaller --onefile app.py  # Replace with your entry script
+          pyinstaller --onefile smartcart/app.py  # Replace with your entry script
 
       - name: Generate release version
         id: version
