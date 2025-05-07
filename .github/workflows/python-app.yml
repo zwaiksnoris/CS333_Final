@@ -1,4 +1,4 @@
-name: Python application
+name: SmartCart CI/CD
 
 on:
   push:
@@ -7,42 +7,60 @@ on:
     branches: [ "main" ]
 
 permissions:
-  contents: write  
+  contents: write
 
 jobs:
   build:
+    name: Lint, Test, and Build
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.10
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements.txt
+          pip install flake8 pytest pytest-cov pyinstaller
 
       - name: Lint with flake8
         run: |
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Run unit tests
+      - name: Run Unit Tests
         run: |
-          python -m unittest discover -s tests -v
+          pytest --cov=smartcart --cov-fail-under=75
+
+      - name: Build Executable
+        run: |
+          pyinstaller --onefile app.py  # replace with your main app filename
+
+      - name: Upload Executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartcart-executable
+          path: dist/app  # adjust if the output file is different
 
   release:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Generate release version
+    steps:
+      - name: Download Executable
+        uses: actions/download-artifact@v4
+        with:
+          name: smartcart-executable
+          path: ./dist
+
+      - name: Generate Release Version
         id: version
         run: echo "tag=v-$(date +'%Y%m%d-%H%M%S')" >> "$GITHUB_OUTPUT"
 
@@ -52,3 +70,4 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           release_name: Release ${{ steps.version.outputs.tag }}
           generate_release_notes: true
+          files: ./dist/app  # match the path to your executable
