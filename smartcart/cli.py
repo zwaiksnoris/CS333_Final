@@ -87,6 +87,7 @@ Options:
 
         else:
             print("Invalid option.")
+            print("test")
 
 if __name__ == "__main__":
     run_console()
